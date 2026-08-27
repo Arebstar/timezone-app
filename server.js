@@ -25,7 +25,7 @@ app.get("/time/:zip", (req, res) => {
   try {
     timezone = tzlookup(location.latitude, location.longitude);
   } catch (error) {
-    return res.status(500).json({ error: "Could not determine timezone for this ZIP code." });
+    return res.status(500).json({ error: "Couldn't determine timezone for this ZIP code." });
   }
 
   const now = new Date();
