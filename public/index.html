@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timezone App</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; max-width: 760px; margin: 60px auto; padding: 0 20px; line-height: 1.5; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .time { font-size: 2rem; font-weight: 700; margin: 10px 0; }
+    code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+    input, button { font: inherit; padding: 10px 12px; }
+    input { width: 140px; }
+    pre { white-space: pre-wrap; background: #f7f7f7; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Timezone App</h1>
+
+  <div class="card">
+    <h2>Your local time</h2>
+    <div id="local-time" class="time">Loading…</div>
+    <div id="timezone"></div>
+  </div>
+
+  <div class="card">
+    <h2>Look up a ZIP code</h2>
+    <p>Enter a U.S. ZIP code, or call the API directly at <code>/time/84107</code>.</p>
+
+    <form id="zip-form">
+      <input id="zip" type="text" inputmode="numeric" pattern="\d{5}" maxlength="5" placeholder="84107" required>
+      <button type="submit">Look up</button>
+    </form>
+
+    <pre id="result">No lookup yet.</pre>
+  </div>
+
+  <script>
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.getElementById("timezone").textContent = `Timezone: ${timezone}`;
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("local-time").textContent =
+        new Intl.DateTimeFormat(undefined, {
+          dateStyle: "full",
+          timeStyle: "medium"
+        }).format(now);
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    document.getElementById("zip-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const zip = document.getElementById("zip").value.trim();
+      const result = document.getElementById("result");
+      result.textContent = "Loading…";
+
+      try {
+        const response = await fetch(`/time/${encodeURIComponent(zip)}`);
+        const data = await response.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        result.textContent = JSON.stringify({ error: "Request failed." }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "timezone-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simple Node/Express timezone app with ZIP code lookup",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "tz-lookup": "^6.1.25",
+    "zipcodes": "^8.0.0"
+  }
+}
