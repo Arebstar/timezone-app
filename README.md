@@ -1,26 +1,12 @@
-# Timezone App
+# Timezone App v2
 
-A small Node.js + Express app that:
+Adds free registration, PostgreSQL user storage, password hashing, PostgreSQL-backed sessions, login/logout, and protected timezone routes.
 
-- Shows the visitor's current local date/time in the browser.
-- Provides `GET /time/:zip` to look up the current date/time for a U.S. ZIP code.
-- Provides `GET /health` for a simple health check.
+## Local
 
-## Run locally
+1. Copy `.env.example` to `.env`.
+2. Put strong random values in it.
+3. Run `docker compose up -d --build`.
+4. Open `http://localhost:3000/register`.
 
-```bash
-npm install
-npm start
-```
-
-Then open:
-
-```text
-http://localhost:3000
-```
-
-Example API endpoint:
-
-```text
-http://localhost:3000/time/84107
-```
+`docker compose down` stops it. `docker compose down -v` also deletes the local database.
