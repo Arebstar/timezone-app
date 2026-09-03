@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>
+    Verify Login — Timezone App
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="/assets/style.css"
+  >
+</head>
+
+<body>
+
+  <main>
+
+    <section class="card auth-card">
+
+      <h1>Check your email</h1>
+
+      <p>
+        Enter the 6-digit login code we sent you.
+      </p>
+
+      <form
+        method="post"
+        action="/verify"
+      >
+
+        <label for="code">
+          Login code
+        </label>
+
+        <input
+          id="code"
+          name="code"
+          type="text"
+          inputmode="numeric"
+          pattern="\d{6}"
+          maxlength="6"
+          autocomplete="one-time-code"
+          required
+        >
+
+        <button type="submit">
+          Verify
+        </button>
+
+      </form>
+
+    </section>
+
+  </main>
+
+</body>
+</html>
