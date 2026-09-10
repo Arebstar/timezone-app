@@ -1,6 +1,7 @@
 const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
 const { Pool } = require("pg");
@@ -76,6 +77,30 @@ app.use(
     }
   })
 );
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many login attempts. Try again in 15 minutes."
+});
+
+const verifyLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many verification attempts. Try again later."
+});
+
+const resendLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many resend requests. Try again in 10 minutes."
+});
 
 const sendView = (res, name) => {
   res.sendFile(path.join(__dirname, "views", name));
@@ -293,7 +318,7 @@ app.get("/login", (req, res) => {
   sendView(res, "login.html");
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", loginLimiter, async (req, res) => {
   const email = String(req.body.email || "")
     .trim()
     .toLowerCase();
@@ -342,6 +367,8 @@ app.post("/login", async (req, res) => {
 
     req.session.pendingUserId = user.id;
     req.session.pendingEmail = user.email;
+    req.session.verifyAttempts = 0;
+    req.session.lastCodeSentAt = Date.now();
 
     delete req.session.userId;
     delete req.session.email;
@@ -372,6 +399,7 @@ app.get("/verify", (req, res) => {
 
 app.post(
   "/verify",
+  verifyLimiter,
   async (req, res) => {
     if (!req.session.pendingUserId) {
       return res.redirect("/login");
@@ -407,6 +435,20 @@ app.post(
           challenge.code_hash
         ))
       ) {
+        req.session.verifyAttempts =
+          Number(req.session.verifyAttempts || 0) + 1;
+
+        if (req.session.verifyAttempts >= 5) {
+          delete req.session.pendingUserId;
+          delete req.session.pendingEmail;
+          delete req.session.verifyAttempts;
+          delete req.session.lastCodeSentAt;
+
+          return res
+            .status(429)
+            .send("Too many incorrect codes. Please log in again.");
+        }
+
         return res
           .status(401)
           .send(
@@ -437,6 +479,8 @@ app.post(
 
       delete req.session.pendingUserId;
       delete req.session.pendingEmail;
+      delete req.session.verifyAttempts;
+      delete req.session.lastCodeSentAt;
 
       res.redirect("/");
     } catch (error) {
@@ -447,6 +491,51 @@ app.post(
         .send(
           "Could not verify login code."
         );
+    }
+  }
+);
+
+app.post(
+  "/verify/resend",
+  resendLimiter,
+  async (req, res) => {
+    if (!req.session.pendingUserId) {
+      return res.redirect("/login");
+    }
+
+    const resendCooldownMs = 60 * 1000;
+    const lastCodeSentAt = Number(req.session.lastCodeSentAt || 0);
+    const remainingMs = resendCooldownMs - (Date.now() - lastCodeSentAt);
+
+    if (remainingMs > 0) {
+      return res
+        .status(429)
+        .send(
+          `Please wait ${Math.ceil(remainingMs / 1000)} seconds before requesting another code.`
+        );
+    }
+
+    try {
+      const result = await pool.query(
+        "SELECT id, email FROM users WHERE id = $1",
+        [req.session.pendingUserId]
+      );
+
+      const user = result.rows[0];
+
+      if (!user) {
+        return res.redirect("/login");
+      }
+
+      await sendLoginCode(user);
+
+      req.session.verifyAttempts = 0;
+      req.session.lastCodeSentAt = Date.now();
+
+      return res.redirect("/verify?resent=1");
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send("Could not resend login code.");
     }
   }
 );
