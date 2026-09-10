@@ -1,64 +1,49 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
+    <meta charset="utf-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>
-    Verify Login — Timezone App
-  </title>
+    <title>
+        Verify Login — Timezone App
+    </title>
 
-  <link
-    rel="stylesheet"
-    href="/assets/style.css"
-  >
+    <link rel="stylesheet" href="/assets/style.css">
 </head>
 
 <body>
 
-  <main>
+    <main>
 
-    <section class="card auth-card">
+        <section class="card auth-card">
 
-      <h1>Check your email</h1>
+            <h1>Check your email</h1>
 
-      <p>
-        Enter the 6-digit login code we sent you.
-      </p>
+            <p>
+                Enter the 6-digit login code we sent you.
+            </p>
 
-      <form
-        method="post"
-        action="/verify"
-      >
+            <form method="post" action="/verify">
 
-        <label for="code">
-          Login code
-        </label>
+                <label for="code">
+                    Login code
+                </label>
 
-        <input
-          id="code"
-          name="code"
-          type="text"
-          inputmode="numeric"
-          pattern="\d{6}"
-          maxlength="6"
-          autocomplete="one-time-code"
-          required
-        >
+                <input id="code" name="code" type="text" inputmode="numeric" pattern="\d{6}" maxlength="6"
+                    autocomplete="one-time-code" required>
 
-        <button type="submit">
-          Verify
-        </button>
+                <button type="submit">
+                    Verify
+                </button>
 
-      </form>
+            </form>
 
-    </section>
+        </section>
 
-  </main>
+    </main>
 
 </body>
+
 </html>

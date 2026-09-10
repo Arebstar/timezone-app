@@ -11,9 +11,11 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
 
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
-      MAIL_FROM: no-reply@timezone.test
+      SMTP_HOST: smtp.sendgrid.net
+      SMTP_PORT: 587
+      SMTP_USER: apikey
+      SMTP_PASS: ${SENDGRID_API_KEY}
+      MAIL_FROM: no-reply@workmansuccess.com
 
     ports:
       - "3000:3000"
@@ -21,9 +23,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-      mailpit:
-        condition: service_started
 
     networks:
       - backend

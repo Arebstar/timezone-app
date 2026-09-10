@@ -28,10 +28,21 @@ if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required");
 }
 
+// const mailer = nodemailer.createTransport({
+//   host: process.env.SMTP_HOST || "mailpit",
+//   port: Number(process.env.SMTP_PORT || 1025),
+//   secure: false
+// });
+
 const mailer = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "mailpit",
-  port: Number(process.env.SMTP_PORT || 1025),
-  secure: false
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false,
+
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
 });
 
 app.set("trust proxy", 1);
@@ -147,7 +158,7 @@ async function sendLoginCode(user) {
   await mailer.sendMail({
     from:
       process.env.MAIL_FROM ||
-      "no-reply@timezone.test",
+      "no-reply@workmansuccess.com",
 
     to: user.email,
 
