@@ -10,3 +10,13 @@ Adds free registration, PostgreSQL user storage, password hashing, PostgreSQL-ba
 4. Open `http://localhost:3000/register`.
 
 `docker compose down` stops it. `docker compose down -v` also deletes the local database.
+
+## Existing databases
+
+Before deploying the account email-change feature, apply its migration once:
+
+```bash
+docker exec -i timezone-db psql -U timezone -d timezone < db/migrate-email-change.sql
+```
+
+The migration is idempotent, so running it again is safe.
