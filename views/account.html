@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Account — Timezone App</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+
+<body>
+  <main>
+    <div class="topbar">
+      <a href="/">Back to app</a>
+      <form method="post" action="/logout">
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+
+    <section class="card">
+      <h1>Account</h1>
+      <p class="{{FEEDBACK_CLASS}}" {{FEEDBACK_HIDDEN}}>{{FEEDBACK}}</p>
+
+      <p>
+        <strong>Current email</strong><br>
+        {{CURRENT_EMAIL}}
+      </p>
+
+      <section {{CHANGE_HIDDEN}}>
+        <h2>Change email</h2>
+        <p class="muted">
+          We will send a verification code to the new address. Your current email stays active until verification succeeds.
+        </p>
+        <form class="stacked-form" method="post" action="/account/email">
+          <label for="new-email">New email</label>
+          <input id="new-email" name="newEmail" type="email" autocomplete="email" required>
+
+          <label for="current-password">Current password</label>
+          <input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required>
+
+          <button type="submit">Send verification code</button>
+        </form>
+      </section>
+
+      <section {{VERIFY_HIDDEN}}>
+        <h2>Verify your new email</h2>
+        <p>We sent a six-digit code to <strong>{{PENDING_EMAIL}}</strong>.</p>
+        <form class="stacked-form" method="post" action="/account/email/verify">
+          <label for="code">Verification code</label>
+          <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+          <button type="submit">Verify and change email</button>
+        </form>
+
+        <div class="topbar-actions">
+          <form method="post" action="/account/email/resend">
+            <button class="secondary" type="submit">Resend code</button>
+          </form>
+          <form method="post" action="/account/email/cancel">
+            <button class="secondary" type="submit">Cancel change</button>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+
+</html>
