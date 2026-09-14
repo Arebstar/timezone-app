@@ -26,9 +26,14 @@ A Dockerized Express and PostgreSQL application for checking the current time, l
 ## Project structure
 
 ```text
-server.js                     Express routes and application logic
+server.js                     Application setup and server startup
+routes/                       HTTP endpoints grouped by feature
+middleware/                   Authentication and rate limiting
+services/                     Email delivery and verification codes
+utils/                        HTML view and escaping helpers
 views/                        Login, verification, account, and admin pages
 public/                       Styles and browser-side assets
+db/pool.js                    Shared PostgreSQL connection pool
 db/init.sql                   Base schema for a new PostgreSQL volume
 db/migrate-admin.sql          Adds user roles
 db/migrate-2fa.sql            Adds login verification codes
