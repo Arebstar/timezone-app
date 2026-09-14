@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const { sendTemplate, escapeHtml } = require("../utils/views");
+const creditService = require("../services/credits");
 
 module.exports = function createAccountRoutes({
   pool,
@@ -19,12 +20,20 @@ module.exports = function createAccountRoutes({
       const user = result.rows[0];
       if (!user) return req.session.destroy(() => res.redirect("/login"));
 
+      const billingResult = await pool.query(
+        `SELECT plan, status, stripe_customer_id
+         FROM billing_accounts WHERE user_id = $1`,
+        [req.session.userId]
+      );
+      const billing = billingResult.rows[0] || { plan: "free", status: "inactive" };
+      const balance = await creditService.getBalance(req.session.userId);
+
       const message = req.query.changed === "1"
         ? "Your email address has been changed."
         : req.query.resent === "1"
           ? "A new verification code was sent."
           : "";
-      await renderAccount(res, user, req.session.pendingNewEmail, message);
+      await renderAccount(res, user, billing, balance, req.session.pendingNewEmail, message);
     } catch (error) {
       console.error(error);
       res.status(500).send("Could not load account.");
@@ -193,7 +202,7 @@ function clearPendingEmailChange(session) {
   delete session.lastEmailChangeCodeSentAt;
 }
 
-async function renderAccount(res, user, pendingEmail, message = "", isError = false) {
+async function renderAccount(res, user, billing, balance, pendingEmail, message = "", isError = false) {
   await sendTemplate(res, "account.html", {
     CURRENT_EMAIL: escapeHtml(user.email),
     PENDING_EMAIL: escapeHtml(pendingEmail || ""),
@@ -201,6 +210,11 @@ async function renderAccount(res, user, pendingEmail, message = "", isError = fa
     VERIFY_HIDDEN: pendingEmail ? "" : "hidden",
     FEEDBACK_HIDDEN: message ? "" : "hidden",
     FEEDBACK_CLASS: isError ? "error" : "notice",
-    FEEDBACK: escapeHtml(message)
+    FEEDBACK: escapeHtml(message),
+    CREDIT_BALANCE: balance,
+    PLAN_NAME: billing.plan === "pro" ? "Pro" : "Free",
+    SUBSCRIPTION_STATUS: escapeHtml(billing.status || "inactive"),
+    CHECKOUT_HIDDEN: billing.plan === "pro" && billing.status !== "canceled" ? "hidden" : "",
+    PORTAL_HIDDEN: billing.stripe_customer_id ? "" : "hidden"
   });
 }

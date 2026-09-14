@@ -7,6 +7,9 @@ const pool = require("./db/pool");
 const { requireAuth, requireAdmin } = require("./middleware/auth");
 const limits = require("./middleware/rate-limits");
 const emailService = require("./services/email");
+const billingService = require("./services/billing");
+const createBillingWebhookRoutes = require("./routes/billing-webhook");
+const createBillingRoutes = require("./routes/billing");
 const createHealthRoutes = require("./routes/health");
 const createAuthRoutes = require("./routes/auth");
 const createAppRoutes = require("./routes/app");
@@ -23,6 +26,7 @@ const secureCookie =
   String(process.env.COOKIE_SECURE || "false").toLowerCase() === "true";
 
 app.set("trust proxy", 1);
+app.use(createBillingWebhookRoutes({ billingService }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use("/assets", express.static(path.join(__dirname, "public")));
@@ -47,6 +51,7 @@ app.use(createHealthRoutes({ pool }));
 app.use(createAuthRoutes({ pool, emailService, limits }));
 app.use(createAppRoutes({ pool, requireAuth }));
 app.use(createAccountRoutes({ pool, requireAuth, emailService, limits }));
+app.use(createBillingRoutes({ requireAuth, billingService }));
 app.use(createAdminRoutes({ pool, requireAdmin }));
 app.use(createTimezoneRoutes({ requireAuth }));
 

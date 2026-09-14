@@ -16,6 +16,10 @@ services:
       SMTP_USER: apikey
       SMTP_PASS: ${SENDGRID_API_KEY}
       MAIL_FROM: no-reply@workmansuccess.com
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID}
 
     ports:
       - "3000:3000"
@@ -32,6 +36,8 @@ services:
     image: postgres:17-alpine
     container_name: timezone-db
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
 
     environment:
       POSTGRES_DB: timezone
