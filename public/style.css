@@ -14,6 +14,10 @@ main {
     margin: 56px auto
 }
 
+.admin-main {
+    width: min(1400px, calc(100% - 48px))
+}
+
 .card {
     background: #fff;
     border: 1px solid #ddd;
@@ -141,4 +145,35 @@ td {
     padding: 10px;
     text-align: left;
     border: 1px solid #d1d5db
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #ddd;
+    margin: 24px 0
+}
+
+.credit-gift-form {
+    display: grid;
+    grid-template-columns: 80px minmax(180px, 1fr) auto;
+    gap: 8px
+}
+
+.admin-main th:nth-child(1),
+.admin-main td:nth-child(1),
+.admin-main th:nth-child(3),
+.admin-main td:nth-child(3),
+.admin-main th:nth-child(4),
+.admin-main td:nth-child(4) {
+    white-space: nowrap
+}
+
+@media (max-width: 900px) {
+    .admin-main {
+        width: min(760px, calc(100% - 32px))
+    }
+
+    .credit-gift-form {
+        grid-template-columns: 1fr
+    }
 }

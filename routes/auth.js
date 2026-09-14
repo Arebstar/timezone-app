@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const { sendView } = require("../utils/views");
+const creditService = require("../services/credits");
 
 module.exports = function createAuthRoutes({ pool, emailService, limits }) {
   const router = express.Router();
@@ -22,11 +23,23 @@ module.exports = function createAuthRoutes({ pool, emailService, limits }) {
 
     try {
       const hash = await bcrypt.hash(password, 12);
-      const result = await pool.query(
-        `INSERT INTO users (email, password_hash)
-         VALUES ($1, $2) RETURNING id, email`,
-        [email, hash]
-      );
+      const client = await pool.connect();
+      let result;
+      try {
+        await client.query("BEGIN");
+        result = await client.query(
+          `INSERT INTO users (email, password_hash)
+           VALUES ($1, $2) RETURNING id, email`,
+          [email, hash]
+        );
+        await creditService.grantSignupCredits(client, result.rows[0].id);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
       req.session.userId = result.rows[0].id;
       req.session.email = result.rows[0].email;
       return res.redirect("/");

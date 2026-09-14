@@ -26,6 +26,17 @@
         {{CURRENT_EMAIL}}
       </p>
 
+      <hr>
+      <h2>Plan and credits</h2>
+      <p><strong>{{CREDIT_BALANCE}} credits available</strong></p>
+      <p>Plan: {{PLAN_NAME}} <span class="muted">({{SUBSCRIPTION_STATUS}})</span></p>
+      <form method="post" action="/billing/checkout" {{CHECKOUT_HIDDEN}}>
+        <button type="submit">Upgrade to Pro — 10 credits monthly</button>
+      </form>
+      <form method="post" action="/billing/portal" {{PORTAL_HIDDEN}}>
+        <button class="secondary" type="submit">Manage billing</button>
+      </form>
+
       <section {{CHANGE_HIDDEN}}>
         <h2>Change email</h2>
         <p class="muted">

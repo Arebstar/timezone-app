@@ -13,6 +13,9 @@ A Dockerized Express and PostgreSQL application for checking the current time, l
 - Account page with verified email changes
 - Notification to the previous address after an email change
 - Admin-only user list
+- FIFO credit grants with five free signup credits
+- Stripe Pro subscriptions with ten monthly rollover credits
+- Audited admin credit gifts
 - Application and database health endpoint
 
 ## Technology
@@ -38,6 +41,7 @@ db/init.sql                   Base schema for a new PostgreSQL volume
 db/migrate-admin.sql          Adds user roles
 db/migrate-2fa.sql            Adds login verification codes
 db/migrate-email-change.sql   Adds email-change verification codes
+db/migrate-billing.sql        Adds billing, credit, and Stripe event records
 compose.yaml                  Local Docker Compose configuration
 ```
 
@@ -56,11 +60,28 @@ DB_PASSWORD=replace-with-a-long-random-password
 SESSION_SECRET=replace-with-another-long-random-secret
 COOKIE_SECURE=false
 SENDGRID_API_KEY=replace-with-your-sendgrid-api-key
+APP_BASE_URL=http://localhost:3000
+STRIPE_SECRET_KEY=sk_test_replace-with-your-test-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_replace-with-your-test-webhook-secret
+STRIPE_PRO_PRICE_ID=price_replace-with-your-pro-monthly-price-id
 ```
 
 Use `COOKIE_SECURE=false` for local HTTP development. Set it to `true` when the application is served over HTTPS in production.
 
 The sender configured as `MAIL_FROM` in `compose.yaml` must be authorized by your SendGrid account. Never commit `.env` or actual secrets.
+
+## Stripe test-mode setup
+
+1. In Stripe test mode, create a `Timezone App Pro` product with a recurring monthly price.
+2. Copy its `price_...` identifier into `STRIPE_PRO_PRICE_ID`. The webhook accepts monthly credit events only when the subscription contains this exact price and the application metadata matches `timezone-app`.
+3. Add a test webhook endpoint pointing to `https://your-domain.example/webhooks/stripe`.
+4. Subscribe it to `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, and `customer.subscription.deleted`.
+5. Copy that endpoint's `whsec_...` signing secret into `STRIPE_WEBHOOK_SECRET`.
+6. Configure Stripe's Customer Portal if subscribers should manage payment methods or cancellations.
+
+Stripe Customers are created only when users begin Pro checkout. Credit grants come from signed `invoice.paid` webhooks, are idempotent by Stripe invoice ID, and expire one month after the paid service period ends. This permits at most one month of subscription-credit rollover. Free signup and admin-gift credits do not expire.
+
+Credits are not currently deducted by timezone lookups. Connect `services/credits.js`'s FIFO `consumeCredits` operation only after deciding which product action should cost credits.
 
 ## Local setup
 
@@ -76,6 +97,7 @@ Apply all migrations. They use `IF NOT EXISTS`, so these commands are safe for b
 docker exec -i timezone-db psql -U timezone -d timezone < db/migrate-admin.sql
 docker exec -i timezone-db psql -U timezone -d timezone < db/migrate-2fa.sql
 docker exec -i timezone-db psql -U timezone -d timezone < db/migrate-email-change.sql
+docker exec -i timezone-db psql -U timezone -d timezone < db/migrate-billing.sql
 ```
 
 Open [http://localhost:3000/register](http://localhost:3000/register) to create an account.
@@ -127,6 +149,12 @@ Apply only migrations introduced since the previous deployment. For the account 
 
 ```bash
 docker exec -i timezone-db psql -U timezone -d timezone < db/migrate-email-change.sql
+```
+
+For the Stripe credits release, apply this migration before rebuilding the app container:
+
+```bash
+docker exec -i timezone-db psql -U timezone -d timezone < db/migrate-billing.sql
 ```
 
 Rebuild and replace the application container using the server's production Compose file:
