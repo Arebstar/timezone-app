@@ -16,7 +16,7 @@ function requireConfiguration() {
 async function createCheckoutSession(userId) {
   requireConfiguration();
   const userResult = await pool.query(
-    `SELECT u.email, b.stripe_customer_id
+    `SELECT u.email, b.stripe_customer_id, b.stripe_subscription_id, b.status
      FROM users u
      LEFT JOIN billing_accounts b ON b.user_id = u.id
      WHERE u.id = $1`,
@@ -24,6 +24,11 @@ async function createCheckoutSession(userId) {
   );
   const user = userResult.rows[0];
   if (!user) throw new Error("User not found");
+  if (user.stripe_subscription_id && !["canceled", "incomplete_expired"].includes(user.status)) {
+    const error = new Error("User already has a Stripe subscription");
+    error.code = "ALREADY_SUBSCRIBED";
+    throw error;
+  }
 
   let customerId = user.stripe_customer_id;
   if (!customerId) {

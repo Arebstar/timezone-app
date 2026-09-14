@@ -10,7 +10,7 @@
 
 <body>
   <main>
-    <div class="topbar"><strong id="user-email">Signed in</strong>
+    <div class="topbar"><div><strong id="user-email">Signed in</strong><br><span id="credit-balance" class="muted"></span></div>
       <div class="topbar-actions"><a href="/account">Account</a>
         <form method="post" action="/logout"><button type="submit">Log out</button></form>
       </div>
@@ -23,12 +23,46 @@
     </section>
     <section class="card">
       <h2>Look up a ZIP code</h2>
+      <p class="muted">Each successful lookup costs 1 credit.</p>
       <form id="zip-form" class="row"><input id="zip" type="text" inputmode="numeric" pattern="\d{5}" maxlength="5"
           placeholder="84107" required><button type="submit">Look up</button></form>
       <pre id="result">No lookup yet.</pre>
     </section>
   </main>
-  <script>const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; document.getElementById('timezone').textContent = `Timezone: ${tz}`; function tick() { document.getElementById('local-time').textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'full', timeStyle: 'medium' }).format(new Date()) } tick(); setInterval(tick, 1000); fetch('/me').then(r => r.json()).then(d => document.getElementById('user-email').textContent = d.email); document.getElementById('zip-form').addEventListener('submit', async e => { e.preventDefault(); const z = document.getElementById('zip').value.trim(), out = document.getElementById('result'); out.textContent = 'Loading…'; const r = await fetch(`/time/${encodeURIComponent(z)}`); out.textContent = JSON.stringify(await r.json(), null, 2) });</script>
+  <script>
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const balanceElement = document.getElementById('credit-balance');
+    document.getElementById('timezone').textContent = `Timezone: ${tz}`;
+
+    function showBalance(balance) {
+      balanceElement.textContent = `${balance} credit${balance === 1 ? '' : 's'} available`;
+    }
+
+    function tick() {
+      document.getElementById('local-time').textContent = new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'full',
+        timeStyle: 'medium'
+      }).format(new Date());
+    }
+
+    tick();
+    setInterval(tick, 1000);
+    fetch('/me').then(r => r.json()).then(d => {
+      document.getElementById('user-email').textContent = d.email;
+      showBalance(d.creditBalance);
+    });
+
+    document.getElementById('zip-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const zip = document.getElementById('zip').value.trim();
+      const output = document.getElementById('result');
+      output.textContent = 'Loading…';
+      const response = await fetch(`/time/${encodeURIComponent(zip)}`);
+      const data = await response.json();
+      output.textContent = JSON.stringify(data, null, 2);
+      if (Number.isInteger(data.creditsRemaining)) showBalance(data.creditsRemaining);
+    });
+  </script>
 </body>
 
 </html>

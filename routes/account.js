@@ -21,7 +21,7 @@ module.exports = function createAccountRoutes({
       if (!user) return req.session.destroy(() => res.redirect("/login"));
 
       const billingResult = await pool.query(
-        `SELECT plan, status, stripe_customer_id
+        `SELECT plan, status, stripe_customer_id, stripe_subscription_id
          FROM billing_accounts WHERE user_id = $1`,
         [req.session.userId]
       );
@@ -32,7 +32,11 @@ module.exports = function createAccountRoutes({
         ? "Your email address has been changed."
         : req.query.resent === "1"
           ? "A new verification code was sent."
-          : "";
+          : req.query.checkout === "cancelled"
+            ? "Checkout canceled. No payment was made."
+            : req.query.checkout === "success"
+              ? "Checkout completed. Your plan and credits will update after Stripe confirms the payment."
+              : "";
       await renderAccount(res, user, billing, balance, req.session.pendingNewEmail, message);
     } catch (error) {
       console.error(error);
@@ -203,6 +207,8 @@ function clearPendingEmailChange(session) {
 }
 
 async function renderAccount(res, user, billing, balance, pendingEmail, message = "", isError = false) {
+  const hasOngoingSubscription = billing.stripe_subscription_id &&
+    !["canceled", "incomplete_expired"].includes(billing.status);
   await sendTemplate(res, "account.html", {
     CURRENT_EMAIL: escapeHtml(user.email),
     PENDING_EMAIL: escapeHtml(pendingEmail || ""),
@@ -214,7 +220,8 @@ async function renderAccount(res, user, billing, balance, pendingEmail, message 
     CREDIT_BALANCE: balance,
     PLAN_NAME: billing.plan === "pro" ? "Pro" : "Free",
     SUBSCRIPTION_STATUS: escapeHtml(billing.status || "inactive"),
-    CHECKOUT_HIDDEN: billing.plan === "pro" && billing.status !== "canceled" ? "hidden" : "",
-    PORTAL_HIDDEN: billing.stripe_customer_id ? "" : "hidden"
+    STATUS_HIDDEN: billing.plan === "pro" ? "" : "hidden",
+    CHECKOUT_HIDDEN: hasOngoingSubscription ? "hidden" : "",
+    PORTAL_HIDDEN: hasOngoingSubscription ? "" : "hidden"
   });
 }

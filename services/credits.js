@@ -94,6 +94,7 @@ async function consumeCredits(userId, amount, description) {
       remaining -= used;
     }
     await client.query("COMMIT");
+    return balance - amount;
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

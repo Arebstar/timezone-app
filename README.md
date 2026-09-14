@@ -5,7 +5,7 @@ A Dockerized Express and PostgreSQL application for checking the current time, l
 ## Features
 
 - Current local time and browser timezone
-- US ZIP code timezone lookup
+- US ZIP code timezone lookup costing one credit per successful lookup
 - User registration with bcrypt password hashing
 - PostgreSQL-backed login sessions
 - Email two-factor authentication with expiring, single-use codes
@@ -81,7 +81,7 @@ The sender configured as `MAIL_FROM` in `compose.yaml` must be authorized by you
 
 Stripe Customers are created only when users begin Pro checkout. Credit grants come from signed `invoice.paid` webhooks, are idempotent by Stripe invoice ID, and expire one month after the paid service period ends. This permits at most one month of subscription-credit rollover. Free signup and admin-gift credits do not expire.
 
-Credits are not currently deducted by timezone lookups. Connect `services/credits.js`'s FIFO `consumeCredits` operation only after deciding which product action should cost credits.
+Each successful ZIP-code timezone lookup consumes one credit using FIFO ordering. Invalid ZIP codes and lookups that fail before producing a result do not consume credits.
 
 ## Local setup
 

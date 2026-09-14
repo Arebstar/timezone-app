@@ -8,6 +8,9 @@ module.exports = function createBillingRoutes({ requireAuth, billingService }) {
       const checkout = await billingService.createCheckoutSession(req.session.userId);
       return res.redirect(303, checkout.url);
     } catch (error) {
+      if (error.code === "ALREADY_SUBSCRIBED") {
+        return res.status(409).send("You already have a subscription. Use Manage billing instead.");
+      }
       console.error(error);
       return res.status(500).send("Could not start Stripe Checkout.");
     }
